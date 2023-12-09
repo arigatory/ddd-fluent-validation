@@ -42,7 +42,7 @@ namespace Api
         private static Student Alice()
         {
             var alice = new Student("alice@gmail.com", "Alice Alison",
-            new Address("1234 Main St", "Arlington", "VA", "22201"));
+            new[] { new Address("1234 Main St", "Arlington", "VA", "22201") });
             SetId(alice, 1);
             alice.Enroll(new Course(1, "Calculus", 5), Grade.A);
 
@@ -52,7 +52,7 @@ namespace Api
         private static Student Bob()
         {
             var bob = new Student("bob@gmail.com", "Bob Bobson",
-            new Address("2345 Second St", "Barlington", "VA", "22202"));
+            new[] { new Address("2345 Second St", "Barlington", "VA", "22202") });
             SetId(bob, 2);
             bob.Enroll(new Course(2, "History", 4), Grade.B);
 

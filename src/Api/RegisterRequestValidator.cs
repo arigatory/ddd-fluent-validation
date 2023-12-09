@@ -1,5 +1,4 @@
 using FluentValidation;
-using static Api.RegisterRequest;
 
 namespace Api;
 
@@ -9,8 +8,23 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
     {
         RuleFor(x => x.Name).NotEmpty().Length(0, 200);
         RuleFor(x => x.Email).NotEmpty().Length(0, 150).EmailAddress();
-        
-        RuleFor(x => x.Address).NotNull().SetValidator(new AddressValidator());
+
+        RuleFor(x => x.Addresses).NotNull().SetValidator(new AddressesValidator());
+    }
+}
+
+public class AddressesValidator : AbstractValidator<AddressDto[]>
+{
+    public AddressesValidator()
+    {
+        RuleFor(x => x).NotNull()
+            .Must(x => x?.Length >= 1 && x.Length <= 3)
+            .WithMessage("The number of addresses must be between 1 and 3")
+            .ForEach(x =>
+            {
+                x.NotNull();
+                x.SetValidator(new AddressValidator());
+            });
     }
 }
 
@@ -29,7 +43,7 @@ public class EditPersonalInfoRequestValidator : AbstractValidator<EditPersonalIn
 {
     public EditPersonalInfoRequestValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().Length(0, 200);        
-        RuleFor(x => x.Address).NotNull().SetValidator(new AddressValidator());
+        RuleFor(x => x.Name).NotEmpty().Length(0, 200);
+        RuleFor(x => x.Addresses).NotNull().SetValidator(new AddressesValidator());
     }
 }
