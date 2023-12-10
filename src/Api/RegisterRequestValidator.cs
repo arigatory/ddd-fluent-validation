@@ -39,16 +39,12 @@ public static class CustomValidators
         {
             if (min.HasValue && list.Count < min.Value)
             {
-                context.AddFailure(
-                    context.PropertyPath,
-                    $"The list must contain {min.Value} items or more. It contains {list.Count} items.");
+                context.AddFailure($"The list must contain {min.Value} items or more. It contains {list.Count} items.");
             }
 
             if (max.HasValue && list.Count > max.Value)
             {
-                context.AddFailure(
-                    context.PropertyPath,
-                    $"The list must contain {max.Value} items or fewer. It contains {list.Count} items.");
+                context.AddFailure($"The list must contain {max.Value} items or fewer. It contains {list.Count} items.");
             }
         });
     }
