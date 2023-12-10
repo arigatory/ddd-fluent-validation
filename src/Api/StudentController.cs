@@ -22,9 +22,13 @@ public class StudentController : ApplicationController
     {
         var addresses = request.Addresses.Select(x => new Address(x.Street, x.City, x.State, x.ZipCode))
             .ToArray();
-        var email = new Email(request.Email);
-        var name = new StudentName(request.Name);
-        var student = new Student(email, name, addresses);
+        var email = Email.Create(request.Email);
+        var name = StudentName.Create(request.Name);
+
+        if (email.IsFailure) return BadRequest(email.Error);
+        if (name.IsFailure) return BadRequest(name.Error);
+        
+        var student = new Student(email.Value, name.Value, addresses);
         _studentRepository.Save(student);
 
         var response = new RegisterResponse
