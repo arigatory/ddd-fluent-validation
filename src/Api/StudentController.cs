@@ -20,15 +20,13 @@ public class StudentController : ApplicationController
     [HttpPost]
     public IActionResult Register([FromBody] RegisterRequest request)
     {
-        var addresses = request.Addresses.Select(x => new Address(x.Street, x.City, x.State, x.ZipCode))
+        var addresses = request.Addresses
+        .Select(x => Address.Create(x.Street, x.City, x.State, x.ZipCode).Value)
             .ToArray();
-        var email = Email.Create(request.Email);
-        var name = StudentName.Create(request.Name);
+        var email = Email.Create(request.Email).Value;
+        var studentName = request.Name.Trim();
 
-        if (email.IsFailure) return BadRequest(email.Error);
-        if (name.IsFailure) return BadRequest(name.Error);
-        
-        var student = new Student(email.Value, name.Value, addresses);
+        var student = new Student(email, studentName, addresses);
         _studentRepository.Save(student);
 
         var response = new RegisterResponse
@@ -43,8 +41,8 @@ public class StudentController : ApplicationController
     {
         Student student = _studentRepository.GetById(id);
 
-        var addresses = request.Addresses.Select(x => new Address(x.Street, x.City, x.State, x.ZipCode))
-            .ToArray();
+        // var addresses = request.Addresses.Select(x => new Address(x.Street, x.City, x.State, x.ZipCode))
+        //     .ToArray();
         //student.EditPersonalInfo(request.Name, addresses);
         _studentRepository.Save(student);
 
@@ -78,11 +76,11 @@ public class StudentController : ApplicationController
             {
                 Street = x.Street,
                 City = x.City,
-                State = x.State,
+                State = x.State.Value,
                 ZipCode = x.ZipCode,
             }).ToArray(),
             Email = student.Email.Value,
-            Name = student.Name.Value,
+            Name = student.Name,
             Enrollments = student.Enrollments.Select(x => new CourseEnrollmentDto
             {
                 Course = x.Course.Name,
