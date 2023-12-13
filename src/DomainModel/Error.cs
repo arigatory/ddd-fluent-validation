@@ -6,6 +6,8 @@ namespace DomainModel;
 
 public class Error : ValueObject
 {
+    private const string Separator = "||";
+
     public string Code { get; }
     public string Message { get; }
     public Error(string code, string message)
@@ -18,6 +20,20 @@ public class Error : ValueObject
     protected override IEnumerable<IComparable> GetEqualityComponents()
     {
         yield return Code;
+    }
+
+    public string Serialize()
+    {
+        return $"{Code}{Separator}{Message}";
+    }
+
+    public static Error Deserialize(string serialized)
+    {
+        string[] data = serialized.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (data.Length < 2) throw new Exception($"Invalid error serialization: '{serialized}'");
+
+        return new Error(data[0], data[1]);
     }
 }
 
@@ -44,6 +60,22 @@ public static class Errors
         {
             string label = name == null ? " " : " " + name + " ";
             return new Error("invalid.string.length", $"Invalid{label}length");
+        }
+
+
+        public static Error CollectionIsTooSmall(int min, int current)
+        {
+            return new Error("collection.is.too.small", $"The collection must contain {min} items or more. It contains {current} items.");
+        }
+
+        public static Error CollectionIsTooLarge(int max, int current)
+        {
+            return new Error("collection.is.too.large", $"The collection must contain {max} items or less. It contains {current} items.");
+        }
+
+        public static Error InternalServerError(string message)
+        {
+            return new Error("internal.server.error", message);
         }
     }
 }
