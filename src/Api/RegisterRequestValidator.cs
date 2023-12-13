@@ -8,34 +8,42 @@ namespace Api;
 
 public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 {
-    public RegisterRequestValidator()
+    public RegisterRequestValidator(StateRepository repository)
     {
         RuleFor(x => x.Name)
             .NotEmpty()
             .Length(0, 200);
-            // .MustBeValueObject(StudentName.Create);
+        // .MustBeValueObject(StudentName.Create);
+
+        RuleFor(x => x.Addresses).NotNull().SetValidator(new AddressesValidator(repository));
 
         RuleFor(x => x.Email)
             .MustBeValueObject(Email.Create)
             .When(x => x.Email != null);
 
-        RuleFor(x => x.Addresses).NotNull().SetValidator(new AddressesValidator());
     }
 }
 
 public class AddressesValidator : AbstractValidator<AddressDto[]>
 {
-    public AddressesValidator()
+    public AddressesValidator(StateRepository repository)
     {
         RuleFor(x => x)
             .ListMustContainNumberOfItems(1, 3)
             .ForEach(x =>
             {
                 x.NotNull();
-                x.ChildRules(address => {
+                x.ChildRules(address =>
+                {
                     address.ClassLevelCascadeMode = CascadeMode.Stop;
-                    address.RuleFor(x => x.State).MustBeValueObject(State.Create);
-                    address.RuleFor(y => y).MustBeEntity(y => Address.Create(y.Street, y.City, y.State, y.ZipCode));
+                    address.RuleFor(x => x.State).MustBeValueObject(s =>
+                    {
+                        return State.Create(s, repository.GetAll());
+                    });
+                    address.RuleFor(y => y).MustBeEntity(y =>
+                    {
+                        return Address.Create(y.Street, y.City, y.State, y.ZipCode, repository.GetAll());
+                    });
                 });
             });
     }
@@ -44,33 +52,31 @@ public class AddressesValidator : AbstractValidator<AddressDto[]>
 public static class CustomValidators
 {
     public static IRuleBuilderOptions<T, TElement> MustBeEntity<T, TElement, TValueObject>(
-    this IRuleBuilder<T, TElement> ruleBuilder, Func<TElement, Result<TValueObject>> factoryMethod
+    this IRuleBuilder<T, TElement> ruleBuilder, Func<TElement, Result<TValueObject, Error>> factoryMethod
 ) where TValueObject : DomainModel.Entity
     {
         return (IRuleBuilderOptions<T, TElement>)ruleBuilder.Custom((value, context) =>
        {
-           Result<TValueObject> result = factoryMethod(value);
+           Result<TValueObject, Error> result = factoryMethod(value);
 
            if (result.IsFailure)
            {
-               context.AddFailure(result.Error);
+               context.AddFailure(result.Error.Code);
            }
        });
     }
 
     public static IRuleBuilderOptions<T, string> MustBeValueObject<T, TValueObject>(
-        this IRuleBuilder<T, string> ruleBuilder, Func<string, Result<TValueObject>> factoryMethod
+        this IRuleBuilder<T, string> ruleBuilder, Func<string, Result<TValueObject, Error>> factoryMethod
     ) where TValueObject : ValueObject
     {
         return (IRuleBuilderOptions<T, string>)ruleBuilder.Custom((value, context) =>
         {
-            if (string.IsNullOrWhiteSpace(value)) return;
-
-            Result<TValueObject> result = factoryMethod(value);
+            Result<TValueObject, Error> result = factoryMethod(value);
 
             if (result.IsFailure)
             {
-                context.AddFailure(result.Error);
+                context.AddFailure(result.Error.Code);
             }
         });
     }
@@ -106,9 +112,9 @@ public class AddressValidator : AbstractValidator<AddressDto>
 
 public class EditPersonalInfoRequestValidator : AbstractValidator<EditPersonalInfoRequest>
 {
-    public EditPersonalInfoRequestValidator()
+    public EditPersonalInfoRequestValidator(StateRepository repository)
     {
         RuleFor(x => x.Name).NotEmpty().Length(0, 200);
-        RuleFor(x => x.Addresses).NotNull().SetValidator(new AddressesValidator());
+        RuleFor(x => x.Addresses).NotNull().SetValidator(new AddressesValidator(repository));
     }
 }

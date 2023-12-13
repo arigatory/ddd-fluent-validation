@@ -7,9 +7,7 @@ namespace DomainModel;
 
 public class State : ValueObject
 {
-    public static readonly State VA = new State("VA");
-    public static readonly State DC = new State("DC");
-    public static readonly State[] All = { VA, DC };
+
 
     public string Value { get; }
 
@@ -18,20 +16,20 @@ public class State : ValueObject
         Value = value;
     }
 
-    public static Result<State> Create(string input)
+    public static Result<State, Error> Create(string input, string[] allStates)
     {
         if (string.IsNullOrWhiteSpace(input))
-            return Result.Failure<State>("Value is required");
+            return Errors.General.ValueIsRequired();
 
-        string name = input.Trim();
+        string name = input.Trim().ToUpper();
 
-        if (name.Length > 2) 
-            return Result.Failure<State>("Value is too long");
+        if (name.Length > 2)
+            return Errors.General.ValueIsInvalid();
 
-        if (All.Any(x => x.Value == name.ToUpper()) == false)
-            return Result.Failure<State>("State is invalid");
+        if (allStates.Any(x => x == name) == false)
+            return Errors.Student.InvalidState(name);
 
-        return Result.Success(new State(name));
+        return new State(name);
     }
 
     protected override IEnumerable<IComparable> GetEqualityComponents()

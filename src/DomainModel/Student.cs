@@ -43,39 +43,4 @@ namespace DomainModel
             _enrollments.Add(enrollment);
         }
     }
-
-    public class Address : Entity
-    {
-        public string Street { get; }
-        public string City { get; }
-        public State State { get; }
-        public string ZipCode { get; }
-
-        private Address(string street, string city, State state, string zipCode)
-        {
-            Street = street;
-            City = city;
-            State = state;
-            ZipCode = zipCode;
-        }
-
-        public static Result<Address> Create(string street, string city, string state, string zipCode)
-        {
-            State stateObject = State.Create(state).Value;
-
-            street = (street ?? "").Trim();
-            city = (city ?? "").Trim();
-            zipCode = (zipCode ?? "").Trim();
-
-            if (street.Length < 1 || street.Length > 100)
-                return Result.Failure<Address>("Invalid street length");
-            if (city.Length < 1 || city.Length > 40)
-                return Result.Failure<Address>("Invalid city length");
-            if (state.Length < 1 || state.Length > 2)
-                return Result.Failure<Address>("Invalid zip code length");
-
-            return new Address(street, city, stateObject, zipCode);
-        }
-
-    }
 }

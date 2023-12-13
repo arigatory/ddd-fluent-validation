@@ -10,9 +10,11 @@ public class StudentController : ApplicationController
 {
     private readonly StudentRepository _studentRepository;
     private readonly CourseRepository _courseRepository;
+    private readonly StateRepository _stateRepository;
 
-    public StudentController(StudentRepository studentRepository, CourseRepository courseRepository)
+    public StudentController(StudentRepository studentRepository, CourseRepository courseRepository, StateRepository stateRepository)
     {
+        _stateRepository = stateRepository;
         _studentRepository = studentRepository;
         _courseRepository = courseRepository;
     }
@@ -21,7 +23,7 @@ public class StudentController : ApplicationController
     public IActionResult Register([FromBody] RegisterRequest request)
     {
         var addresses = request.Addresses
-        .Select(x => Address.Create(x.Street, x.City, x.State, x.ZipCode).Value)
+        .Select(x => Address.Create(x.Street, x.City, x.State, x.ZipCode, _stateRepository.GetAll()).Value)
             .ToArray();
         var email = Email.Create(request.Email).Value;
         var studentName = request.Name.Trim();
