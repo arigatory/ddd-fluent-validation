@@ -29,6 +29,9 @@ public class Error : ValueObject
 
     public static Error Deserialize(string serialized)
     {
+        if (serialized == "A non-empty request body is required.")
+            return Errors.General.ValueIsRequired();
+
         string[] data = serialized.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries);
 
         if (data.Length < 2) throw new Exception($"Invalid error serialization: '{serialized}'");
@@ -41,6 +44,8 @@ public static class Errors
 {
     public static class Student
     {
+        public static Error TooManyEnrollments() => new Error("student.too.many.enrollments", "Student cannot have more than 2 enrollments");
+        public static Error AlreadyEnrolled(string courseName) => new Error("student.already.enrolled", $"Student is already enrolled into course '{courseName}");
         public static Error EmailIsTaken(string email) => new Error("student.email.is.taken", $"Student email '{email}' is taken");
         public static Error InvalidState(string name) => new Error("invalid.state", $"Invalid state: '{name}'");
     }

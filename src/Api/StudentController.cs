@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using CSharpFunctionalExtensions;
 using DomainModel;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,10 +24,14 @@ public class StudentController : ApplicationController
     public IActionResult Register([FromBody] RegisterRequest request)
     {
         var addresses = request.Addresses
-        .Select(x => Address.Create(x.Street, x.City, x.State, x.ZipCode, _stateRepository.GetAll()).Value)
+            .Select(x => Address.Create(x.Street, x.City, x.State, x.ZipCode, _stateRepository.GetAll()).Value)
             .ToArray();
         var email = Email.Create(request.Email).Value;
         var studentName = request.Name.Trim();
+
+        Student existingStudent = _studentRepository.GetByEmail(email);
+        if (existingStudent != null)
+            return Error(Errors.Student.EmailIsTaken(email.Value));
 
         var student = new Student(email, studentName, addresses);
         _studentRepository.Save(student);
@@ -42,10 +47,17 @@ public class StudentController : ApplicationController
     public IActionResult EditPersonalInfo(long id, [FromBody] EditPersonalInfoRequest request)
     {
         Student student = _studentRepository.GetById(id);
+        if (student == null)
+            return Error(Errors.General.NotFound(), nameof(id));
 
-        // var addresses = request.Addresses.Select(x => new Address(x.Street, x.City, x.State, x.ZipCode))
-        //     .ToArray();
-        //student.EditPersonalInfo(request.Name, addresses);
+        var addresses = request.Addresses
+           .Select(x => Address.Create(x.Street, x.City, x.State, x.ZipCode, _stateRepository.GetAll()).Value)
+           .ToArray();
+
+        var studentName = request.Name.Trim();
+
+        student.EditPersonalInfo(studentName, addresses);
+
         _studentRepository.Save(student);
 
         return Ok();
@@ -55,13 +67,22 @@ public class StudentController : ApplicationController
     public IActionResult Enroll(long id, [FromBody] EnrollRequest request)
     {
         Student student = _studentRepository.GetById(id);
+        if (student == null) return Error(Errors.General.NotFound(), nameof(id));
 
-        foreach (CourseEnrollmentDto enrollmentDto in request.Enrollments)
+        for (int i = 0; i < request.Enrollments.Length; i++)
         {
-            Course course = _courseRepository.GetByName(enrollmentDto.Course);
-            var grade = Enum.Parse<Grade>(enrollmentDto.Grade);
+            CourseEnrollmentDto dto = request.Enrollments[i];
 
-            student.Enroll(course, grade);
+            Grade grade = Grade.Create(dto.Grade).Value;
+
+            string courseName = (dto.Course ?? "").Trim();
+            Course course = _courseRepository.GetByName(courseName);
+
+            if (course == null) return Error(Errors.General.ValueIsInvalid(), $"{nameof(request.Enrollments)}[{i}].{nameof(dto.Course)}");
+
+            Result<object, Error> result = student.Enroll(course, grade);
+
+            if (result.IsFailure) return Error(result.Error);
         }
 
         return Ok();

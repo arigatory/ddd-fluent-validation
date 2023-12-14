@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DomainModel;
 
@@ -61,6 +62,11 @@ namespace Api
             bob.Enroll(new Course(2, "History", 4), Grade.B);
 
             return bob;
+        }
+
+        public Student GetByEmail(Email email)
+        {
+            return _existingStudents.SingleOrDefault(x => x.Email.Value.ToLower() == email.Value.ToLower());
         }
     }
 }
